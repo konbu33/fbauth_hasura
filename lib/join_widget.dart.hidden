@@ -1,0 +1,299 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'join/join_state_model.dart';
+
+// state管理
+class JoinStateNotifier extends StateNotifier<JoinStateModel> {
+  JoinStateNotifier()
+      : super(JoinStateModel(
+          loginidController: TextEditingController(),
+          passwordController: TextEditingController(),
+          formKey: GlobalKey<FormState>(),
+          loginidKey: GlobalKey<FormFieldState>(),
+          passwordKey: GlobalKey<FormFieldState>(),
+        ));
+
+  // JoinStateModel init() {
+  void init() {
+    state = state.copyWith(
+      loginidController: TextEditingController(),
+      passwordController: TextEditingController(),
+      formKey: GlobalKey<FormState>(),
+      loginidKey: GlobalKey<FormFieldState>(),
+      passwordKey: GlobalKey<FormFieldState>(),
+    );
+
+    // return state;
+  }
+
+  // JoinStateModel toggleObscureText() {
+  void toggleObscureText() {
+    state = state.copyWith(isObscure: !state.isObscure);
+    // return state;
+  }
+
+  // JoinStateModel changeIsSubmitable() {
+  void changeIsSubmitable() {
+    state = state.copyWith(isSubmitable: false);
+    if (state.loginidKey.currentState!.validate() &&
+        state.passwordKey.currentState!.validate()) {
+      state = state.copyWith(isSubmitable: true);
+    }
+
+    // return state;
+  }
+
+  void onSubmit() {
+    init();
+  }
+}
+
+// state管理提供
+final joinStateNotifierProvider =
+    StateNotifierProvider<JoinStateNotifier, JoinStateModel>((ref) {
+  return JoinStateNotifier();
+});
+
+// Join Widget
+class JoinWidget extends HookConsumerWidget {
+  const JoinWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // state管理をDI
+    final JoinStateModel state = ref.watch(joinStateNotifierProvider);
+    final JoinStateNotifier notifier =
+        ref.read(joinStateNotifierProvider.notifier);
+
+    // LoginIDテキストフィールド
+    // Widget _loginIDWidget() {
+    //   return TextField(
+    //     controller: state.loginidController,
+    //     onChanged: (t) {
+    //       print(state.loginidController.text);
+    //       notifier.changeIsSubmitable();
+    //     },
+    //     decoration: const InputDecoration(
+    //         label: Text("E-mail"),
+    //         // labelText: "aaa",
+    //         hintText: "test@text.com"),
+    //   );
+    // }
+
+    // LoginIDテキストフィールド
+    Widget _loginIdWidget() {
+      return TextFormField(
+        key: state.loginidKey,
+        controller: state.loginidController,
+        onChanged: (t) {
+          // print(state.passwordController.text);
+
+          // print("loginid validate : ${state.formKey.currentState}");
+          print(
+              "loginid validate : ${state.loginidKey.currentState!.validate()}");
+          // print("fromKey : ${state.formKey}");
+          // if (state.formKey.currentState!.validate()) {
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //     const SnackBar(content: Text('Processing Data')),
+          //   );
+          // }
+          notifier.changeIsSubmitable();
+        },
+
+        // 入力値の長さ制限
+        maxLength: state.maxLength,
+        // inputFormatters: [
+        //   LengthLimitingTextInputFormatter(10),
+        // ],
+
+        // 入力値の表示・非表示
+        // obscureText: state.isObscure,
+
+        // 入力フィールドの装飾
+        decoration: InputDecoration(
+          // フィールド名
+          label: Text(state.loginFieldName),
+
+          // 入力フィールドの色・枠
+
+          prefixIcon: state.loginIdIcon,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide.none),
+          fillColor: Colors.grey[100],
+          filled: true,
+          // isDense: true,
+
+          // passwordの表示・非表示切り替え
+          // suffixIcon: GestureDetector(
+          //   onTap: () => notifier.toggleObscureText(),
+          //   child: state.isObscure
+          //       ? const Icon(Icons.visibility_off)
+          //       : const Icon(Icons.visibility),
+          // ),
+
+          // suffix: IconButton(
+          //   onPressed: () {
+          //     notifier.toggleObscureText();
+          //   },
+          //   icon: state.isObscure
+          //       ? const Icon(Icons.visibility_off)
+          //       : const Icon(Icons.visibility),
+          // ),
+
+          // ヘルパー・エラーメッセージ表示
+          helperText: "text",
+          helperStyle: TextStyle(color: Colors.red),
+        ),
+
+        // バリデーション
+        validator: (value) {
+          String? customValidator(String? value) {
+            if (value == null) return "Please enter some text password.";
+            if (value.isEmpty) return "Please enter some text password.";
+            if (value.length < state.minLength)
+              return "Min lenght: ${state.minLength}, Max length : ${state.maxLength}.";
+            return null;
+          }
+
+          // if (value == null || value.isEmpty || value.length < 3) {
+          //   return 'Please enter some text';
+          // }
+          // return null;
+          // print("v : $v");
+          customValidator(value);
+        },
+      );
+    }
+
+    // Passwordテキストフィールド
+    Widget _passwordWidget() {
+      return TextFormField(
+        key: state.passwordKey,
+        controller: state.passwordController,
+        onChanged: (t) {
+          // print(state.passwordController.text);
+
+          // print("password validate : ${state.formKey.currentState}");
+          // print(
+          //     "password validate : ${state.passwordKey.currentState!.validate()}");
+          // print("formKey: ${state.formKey}");
+          // if (state.formKey.currentState!.validate()) {
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //     const SnackBar(content: Text('Processing Data')),
+          //   );
+          // }
+          notifier.changeIsSubmitable();
+        },
+
+        // 入力値の長さ制限
+        maxLength: state.maxLength,
+        // inputFormatters: [
+        //   LengthLimitingTextInputFormatter(10),
+        // ],
+
+        // 入力値の表示・非表示
+        obscureText: state.isObscure,
+
+        // 入力フィールドの装飾
+        decoration: InputDecoration(
+          // フィールド名
+          label: Text(state.passwordFieldName),
+
+          // 入力フィールドの色・枠
+          prefixIcon: state.passwordIcon,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide.none),
+          fillColor: Colors.grey[100],
+          filled: true,
+          // isDense: true,
+
+          // passwordの表示・非表示切り替え
+          suffixIcon: GestureDetector(
+            onTap: () => notifier.toggleObscureText(),
+            child: state.isObscure
+                ? const Icon(Icons.visibility_off)
+                : const Icon(Icons.visibility),
+          ),
+
+          // suffix: IconButton(
+          //   iconSize: 1,
+          //   padding: EdgeInsets.all(1.0),
+          //   onPressed: () {
+          //     notifier.toggleObscureText();
+          //   },
+          //   icon: state.isObscure
+          //       ? const Icon(Icons.visibility_off)
+          //       : const Icon(Icons.visibility),
+          // ),
+
+          // ヘルパー・エラーメッセージ表示
+          helperText: "text",
+          helperStyle: TextStyle(color: Colors.red),
+        ),
+
+        // バリデーション
+        validator: (value) {
+          if (value == null || value.isEmpty || value.length < 3) {
+            return 'Please enter some text';
+          }
+          return null;
+          // print("v : $v");
+        },
+      );
+    }
+
+    // Submitボタン
+    Widget _submitWidget() {
+      return Container(
+        width: double.infinity,
+        child: ElevatedButton(
+          style: ButtonStyle(
+              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          )),
+          // onPressed: () {
+          //   print(
+          //       "submit validate : ${state.formKey.currentState!.validate()}");
+          //   state.isSubmitable
+          //       ? () {
+          //           if (state.formKey.currentState!.validate()) {
+          //             ScaffoldMessenger.of(context).showSnackBar(
+          //               const SnackBar(content: Text('Processing Data')),
+          //             );
+          //           }
+          //           notifier.onSubmit();
+          //         }
+          //       : null;
+          // },
+          onPressed: state.isSubmitable
+              ? () {
+                  if (state.formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Processing Data')),
+                    );
+                  }
+                  notifier.onSubmit();
+                }
+              : null,
+          child: Text(state.submitButtonName),
+        ),
+      );
+    }
+
+    // Join Wdiget
+    return Form(
+      key: state.formKey,
+      child: Column(
+        children: [
+          _loginIdWidget(),
+          const SizedBox(height: 30),
+          _passwordWidget(),
+          const SizedBox(height: 50),
+          _submitWidget(),
+        ],
+      ),
+    );
+  }
+}
